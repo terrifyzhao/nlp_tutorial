@@ -133,3 +133,6 @@ text_representation/word2vec/wiki.model
 text_representation/word2vec/wiki.model.trainables.syn1neg.npy
 text_representation/word2vec/wiki.model.wv.vectors.npy
 text_representation/word2vec/wiki.txt
+
+
+ptm/elmo

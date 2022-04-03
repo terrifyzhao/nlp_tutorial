@@ -4,6 +4,7 @@ from collections import defaultdict
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
 from text_similarity.esim import ESIM
+from text_similarity.dssm import DSSM
 from utils import *
 import pandas as pd
 from tqdm import tqdm
@@ -51,15 +52,19 @@ def load_data(batch_size=32):
 
 # 训练模型
 def train():
-    train_data_loader, dev_data_loader, vocab = load_data(128)
-    model = ESIM(char_vocab_size=len(vocab),
+    train_data_loader, dev_data_loader, vocab = load_data(32)
+    # ptm = ESIM(char_vocab_size=len(vocab),
+    #              char_dim=100,
+    #              char_hidden_size=128,
+    #              hidden_size=128,
+    #              max_word_len=10)
+    model = DSSM(char_vocab_size=len(vocab),
                  char_dim=100,
-                 char_hidden_size=128,
                  hidden_size=128,
                  max_word_len=10)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    loss_func = nn.CrossEntropyLoss()
+    loss_func = nn.BCELoss()
 
     if torch.cuda.is_available():
         model = model.cuda()
@@ -73,9 +78,10 @@ def train():
                 x2 = x2.cuda().long()
                 y = y.cuda()
             output = model(x1, x2)
-            pred.extend(torch.argmax(output, dim=1).cpu().numpy())
+
+            pred.extend((output.cpu().data.numpy() > 0.5).astype(int))
             label.extend(y.cpu().numpy())
-            loss = loss_func(output, y)
+            loss = loss_func(output, y.float())
             optimizer.zero_grad()
             # 求解梯度
             loss.backward()
@@ -93,7 +99,7 @@ def train():
                 y = y.cuda()
             with torch.no_grad():
                 output = model(x1, x2)
-            pred.extend(torch.argmax(output, dim=1).cpu().numpy())
+            pred.extend((output.cpu().data.numpy() > 0.5).astype(int))
             label.extend(y.cpu().numpy())
         acc = accuracy_score(pred, label)
         print('dev acc:', acc)

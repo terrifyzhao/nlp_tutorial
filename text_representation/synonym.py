@@ -1,7 +1,7 @@
 import numpy as np
 import gensim
 
-model = gensim.models.Word2Vec.load('word2vec/wiki.model')
+model = gensim.models.Word2Vec.load('word2vec/wiki.ptm')
 embedding = model.wv
 
 
