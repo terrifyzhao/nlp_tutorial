@@ -3,8 +3,8 @@ from torch import nn
 from collections import defaultdict
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
-from text_similarity.esim import ESIM
-from text_similarity.dssm import DSSM
+from text_similarity.esim2 import ESIM
+from text_similarity.dssm2 import DSSM
 from utils import *
 import pandas as pd
 from tqdm import tqdm
@@ -53,18 +53,17 @@ def load_data(batch_size=32):
 # 训练模型
 def train():
     train_data_loader, dev_data_loader, vocab = load_data(32)
-    # ptm = ESIM(char_vocab_size=len(vocab),
-    #              char_dim=100,
-    #              char_hidden_size=128,
-    #              hidden_size=128,
-    #              max_word_len=10)
-    model = DSSM(char_vocab_size=len(vocab),
-                 char_dim=100,
+    model = ESIM(vocab_len=len(vocab),
+                 embedding_size=100,
                  hidden_size=128,
-                 max_word_len=10)
+                 max_len=10)
+    # model = DSSM(vocab_len=len(vocab),
+    #              embedding_size=100,
+    #              hidden_size=128)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     loss_func = nn.BCELoss()
+    # loss_func = nn.CrossEntropyLoss()
 
     if torch.cuda.is_available():
         model = model.cuda()
@@ -77,13 +76,14 @@ def train():
                 x1 = x1.cuda().long()
                 x2 = x2.cuda().long()
                 y = y.cuda()
+            # 前向传播
             output = model(x1, x2)
 
             pred.extend((output.cpu().data.numpy() > 0.5).astype(int))
             label.extend(y.cpu().numpy())
             loss = loss_func(output, y.float())
             optimizer.zero_grad()
-            # 求解梯度
+            # 反向传播
             loss.backward()
             # 更新我们的权重
             optimizer.step()

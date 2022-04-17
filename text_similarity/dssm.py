@@ -6,11 +6,8 @@ class DSSM(nn.Module):
     def __init__(self,
                  char_vocab_size,
                  char_dim=100,
-                 hidden_size=128,
-                 max_word_len=10):
+                 hidden_size=128):
         super(DSSM, self).__init__()
-
-        self.max_word_len = max_word_len
 
         self.char_embedding = nn.Embedding(char_vocab_size, char_dim)
 
