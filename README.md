@@ -16,3 +16,16 @@ https://github.com/HIT-SCIR/ELMoForManyLangs
 
 我自己整理的各种匹配模型
 https://blog.csdn.net/u012526436/article/details/90179466
+
+### huggingface - transformers
+
+模型仓库    
+https://huggingface.co/models
+
+transformers    
+https://github.com/huggingface/transformers
+
+### gpt
+
+闲聊  
+https://github.com/yangjianxin1/GPT2-chitchat
