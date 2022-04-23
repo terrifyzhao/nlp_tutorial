@@ -111,11 +111,16 @@ def train():
     if torch.cuda.is_available():
         model = model.cuda()
 
+    backup = {}
+    epsilon = 1
+    attack = False
+
     for epoch in range(5):
         print('epoch:', epoch + 1)
         pred = []
         label = []
         for step, (b_x, b_y) in enumerate(train_data_loader):
+            optimizer.zero_grad()
             if torch.cuda.is_available():
                 b_x = b_x.cuda().long()
                 b_y = b_y.cuda().long()
@@ -123,10 +128,29 @@ def train():
             pred.extend(torch.argmax(output, dim=1).cpu().numpy())
             label.extend(b_y.cpu().numpy())
             loss = loss_func(output, b_y)
-            optimizer.zero_grad()
-            # 求解梯度
             loss.backward()
-            # 更新我们的权重
+
+            if attack:
+                # 备份参数，添加扰动
+                for name, param in model.embedding.named_parameters():
+                    backup[name] = param.data.clone()
+                    norm = torch.norm(param.grad)
+                    if norm != 0 and not torch.isnan(norm):
+                        r_at = epsilon * param.grad / norm
+                        param.data.add_(r_at)
+
+                # 第二次fp与bp
+                optimizer.zero_grad()
+                output = model(b_x)
+                loss = loss_func(output, b_y)
+                loss.backward()
+
+                # 恢复参数
+                for name, param in model.embedding.named_parameters():
+                    param.data = backup[name]
+                    backup = {}
+
+            # 更新权重
             optimizer.step()
         acc = accuracy_score(pred, label)
         print('train acc:', acc)

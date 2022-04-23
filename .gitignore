@@ -136,3 +136,5 @@ text_representation/word2vec/wiki.txt
 
 
 ptm/elmo
+
+gpt/chitchat/dialogue_model
