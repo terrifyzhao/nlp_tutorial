@@ -4,8 +4,11 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from adversarial_training.adversarial import *
 from utils import fix_seed
+from annlp import ptm_path, print_sentence_length
+import torch
 
-tokenizer = BertTokenizer.from_pretrained('E:\\ptm\\roberta')
+path = ptm_path('roberta')
+tokenizer = BertTokenizer.from_pretrained(path)
 
 
 class BaseDataset(Dataset):
@@ -69,46 +72,11 @@ def load_data(batch_size=32):
 def train():
     fix_seed()
 
-    train_data_loader, dev_data_loader = load_data(32)
+    train_data_loader, dev_data_loader = load_data(128)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model = BertForSequenceClassification.from_pretrained('E:\\ptm\\roberta', num_labels=2)
+    model = BertForSequenceClassification.from_pretrained(path, num_labels=2)
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-5)
-
-    attack = True
-
-    if attack:
-        # at = FGM(model)
-        at = FreeAT(model)
-
-    def adversarial(data):
-        optimizer.zero_grad()
-        # 添加扰动
-        at.attack(emb_name='embeddings.word_embeddings.weight')
-        # 重新计算梯度
-        adv_loss = model(input_ids=data['input_ids'].to(device),
-                         attention_mask=data['attention_mask'].to(device),
-                         labels=data['labels'].to(device)).loss
-        # bp得到新的梯度
-        adv_loss.backward()
-        at.restore(emb_name='embeddings.word_embeddings.weight')
-
-    def adversarial_free(data, m=3):
-        # 备份梯度
-        at.backup_grad()
-        for i in range(m):
-            at.attack(emb_name='embeddings.word_embeddings.weight', first_attack=i == 0)
-            if i == 0:
-                optimizer.zero_grad()
-            else:
-                at.restore_grad()
-            # fp
-            adv_loss = model(input_ids=data['input_ids'].to(device),
-                             attention_mask=data['attention_mask'].to(device),
-                             labels=data['labels'].to(device)).loss
-            # bp得到新的梯度
-            adv_loss.backward()
-        at.restore(emb_name='embeddings.word_embeddings.weight')
 
     for epoch in range(5):
         print('epoch:', epoch + 1)
@@ -128,10 +96,6 @@ def train():
             label.extend(labels.cpu().numpy())
             loss = outputs.loss
             loss.backward()
-
-            if attack:
-                # adversarial(data)
-                adversarial_free(data)
 
             optimizer.step()
 

@@ -2,10 +2,12 @@ from sklearn.metrics import accuracy_score
 from transformers import BertForSequenceClassification, BertTokenizer
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from adversarial_training.adversarial import *
 from utils import fix_seed
+import torch
+import pandas as pd
 
-tokenizer = BertTokenizer.from_pretrained('E:\\ptm\\roberta')
+path = 'E:\\ptm\\roberta'
+tokenizer = BertTokenizer.from_pretrained(path)
 
 
 class BaseDataset(Dataset):
@@ -24,39 +26,27 @@ class BaseDataset(Dataset):
 
 
 def load_data(batch_size=32):
-    train_text = []
-    train_label = []
-    with open('../data/sentiment/sentiment.train.data', encoding='utf-8')as file:
-        for line in file.readlines():
-            t, l = line.strip().split('\t')
-            train_text.append(t)
-            train_label.append(int(l))
-
+    train_df = pd.read_csv('../data/tnews_public/train.csv')
+    train_text = train_df['text'].tolist()
+    train_label = train_df['label'].tolist()
     train_text = tokenizer(text=train_text,
                            return_tensors='pt',
                            truncation=True,
                            padding=True,
-                           max_length=10)
-
+                           max_length=32)
     train_loader = DataLoader(BaseDataset(train_text, train_label),
                               batch_size,
                               pin_memory=True if torch.cuda.is_available() else False,
                               shuffle=False)
 
-    dev_text = []
-    dev_label = []
-    with open('../data/sentiment/sentiment.valid.data', encoding='utf-8')as file:
-        for line in file.readlines():
-            t, l = line.strip().split('\t')
-            dev_text.append(t)
-            dev_label.append(int(l))
-
+    dev_df = pd.read_csv('../data/tnews_public/dev.csv')
+    dev_text = dev_df['text'].tolist()
+    dev_label = dev_df['label'].tolist()
     dev_text = tokenizer(text=dev_text,
                          return_tensors='pt',
                          truncation=True,
                          padding=True,
-                         max_length=10)
-
+                         max_length=32)
     dev_loader = DataLoader(BaseDataset(dev_text, dev_label),
                             batch_size,
                             pin_memory=True if torch.cuda.is_available() else False,
@@ -69,47 +59,14 @@ def load_data(batch_size=32):
 def train():
     fix_seed()
 
-    train_data_loader, dev_data_loader = load_data(32)
+    train_data_loader, dev_data_loader = load_data(64)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model = BertForSequenceClassification.from_pretrained('E:\\ptm\\roberta', num_labels=2)
+
+    model = BertForSequenceClassification.from_pretrained(path, num_labels=4)
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-5)
 
-    attack = True
-
-    if attack:
-        # at = FGM(model)
-        at = FreeAT(model)
-
-    def adversarial(data):
-        optimizer.zero_grad()
-        # 添加扰动
-        at.attack(emb_name='embeddings.word_embeddings.weight')
-        # 重新计算梯度
-        adv_loss = model(input_ids=data['input_ids'].to(device),
-                         attention_mask=data['attention_mask'].to(device),
-                         labels=data['labels'].to(device)).loss
-        # bp得到新的梯度
-        adv_loss.backward()
-        at.restore(emb_name='embeddings.word_embeddings.weight')
-
-    def adversarial_free(data, m=3):
-        # 备份梯度
-        at.backup_grad()
-        for i in range(m):
-            at.attack(emb_name='embeddings.word_embeddings.weight', first_attack=i == 0)
-            if i == 0:
-                optimizer.zero_grad()
-            else:
-                at.restore_grad()
-            # fp
-            adv_loss = model(input_ids=data['input_ids'].to(device),
-                             attention_mask=data['attention_mask'].to(device),
-                             labels=data['labels'].to(device)).loss
-            # bp得到新的梯度
-            adv_loss.backward()
-        at.restore(emb_name='embeddings.word_embeddings.weight')
-
+    best_acc = 0
     for epoch in range(5):
         print('epoch:', epoch + 1)
         pred = []
@@ -128,10 +85,6 @@ def train():
             label.extend(labels.cpu().numpy())
             loss = outputs.loss
             loss.backward()
-
-            if attack:
-                # adversarial(data)
-                adversarial_free(data)
 
             optimizer.step()
 
@@ -155,6 +108,9 @@ def train():
         acc = accuracy_score(pred, label)
         print('dev acc:', acc)
         print()
+        if acc > best_acc:
+            torch.save(model.state_dict(), 'teacher.bin')
+            best_acc = acc
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ import numpy as np
 from collections import defaultdict
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
+from utils import fix_seed
 
 
 class TextCLS(torch.nn.Module):
@@ -101,6 +102,8 @@ def load_data(batch_size=32):
 
 # 训练模型
 def train():
+    fix_seed()
+
     train_data_loader, dev_data_loader, vocab = load_data(128)
     model = TextCLS(vocab_size=len(vocab),
                     embedding_size=100)

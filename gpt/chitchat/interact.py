@@ -105,11 +105,11 @@ history = []
 
 def chitchat(text):
     history.append(tokenizer.encode(text))
-    input_ids = [tokenizer.cls_token_id]  # 每个input以[CLS]为开头
+    input_ids = []  # 每个input以[CLS]为开头
 
     for history_id, history_utr in enumerate(history[-args.max_history_len:]):
         input_ids.extend(history_utr)
-        input_ids.append(tokenizer.sep_token_id)
+        # input_ids.append(tokenizer.sep_token_id)
     curr_input_tensor = torch.tensor(input_ids).long().to(device)
     generated = []
     # 最多生成max_len个token

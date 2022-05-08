@@ -7,9 +7,17 @@ class AT:
         self.backup = {}
 
     def attack(self, emb_name='emb.'):
+        """
+        备份embedding matrix 并添加我们的扰动项
+        :param emb_name: embedding层的名字
+        """
         raise NotImplemented
 
     def restore(self, emb_name='emb.'):
+        """
+        把embedding matrix的参数恢复
+        :param emb_name: embedding层的名字
+        """
         for name, param in self.model.named_parameters():
             if param.requires_grad and emb_name in name:
                 assert name in self.backup
@@ -39,7 +47,7 @@ class FGSM(AT):
                     param.data.add_(r_at)
 
 
-class PGD(AT):
+class FreeAT(AT):
 
     def __init__(self, model):
         super().__init__(model)
@@ -54,10 +62,9 @@ class PGD(AT):
                 if norm != 0 and not torch.isnan(norm):
                     # 得到新的扰动
                     r_at = alpha * param.grad / norm
+                    r_at = torch.clamp(r_at, - epsilon, epsilon)
                     # 加到输入上
                     param.data.add_(r_at)
-                    # 扰动控制在一个范围内
-                    param.data = self.backup[name] + torch.clamp(param.data - self.backup[name], - epsilon, epsilon)
 
     def backup_grad(self):
         for name, param in self.model.named_parameters():
@@ -68,24 +75,6 @@ class PGD(AT):
         for name, param in self.model.named_parameters():
             if param.requires_grad:
                 param.grad = self.grad_backup[name]
-
-
-class FreeAT(AT):
-
-    def __init__(self, model):
-        super().__init__(model)
-        self.grad_backup = {}
-
-    def attack(self, epsilon=0.3, alpha=0.01, emb_name='emb.'):
-        for name, param in self.model.named_parameters():
-            if param.requires_grad and emb_name in name:
-                norm = torch.norm(param.grad)
-                if norm != 0 and not torch.isnan(norm):
-                    # 得到新的扰动
-                    r_at = alpha * param.grad / norm
-                    r_at = torch.clamp(r_at, - epsilon, epsilon)
-                    # 加到输入上
-                    param.data.add_(r_at)
 
 
 class FreeLB(AT):
