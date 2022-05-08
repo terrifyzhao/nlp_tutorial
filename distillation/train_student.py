@@ -1,19 +1,11 @@
-import torch
 from torch import nn
-import jieba
-import numpy as np
-from collections import defaultdict
-from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
-from utils import fix_seed
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from utils import fix_seed
-import json
-from annlp import ptm_path, print_sentence_length
 import torch
-from transformers import BertForSequenceClassification, BertTokenizer
+from transformers import BertTokenizer
 from torch import softmax
 
 path = 'E:\\ptm\\roberta'

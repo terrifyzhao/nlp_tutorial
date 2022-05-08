@@ -7,10 +7,8 @@ from utils import fix_seed
 import torch
 from transformers import BertForSequenceClassification, BertTokenizer
 from torch import softmax
-from annlp import ptm_path
 
 path = 'E:\\ptm\\roberta'
-# path = ptm_path('roberta')
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 tokenizer = BertTokenizer.from_pretrained(path)
 teacher = BertForSequenceClassification.from_pretrained(path, num_labels=4)
@@ -66,7 +64,7 @@ def load_data(batch_size=32):
                            return_tensors='pt',
                            truncation=True,
                            padding=True,
-                           max_length=32)
+                           max_length=20)
     train_loader = DataLoader(BaseDataset(train_text, train_label),
                               batch_size,
                               pin_memory=True if torch.cuda.is_available() else False,
@@ -79,7 +77,7 @@ def load_data(batch_size=32):
                          return_tensors='pt',
                          truncation=True,
                          padding=True,
-                         max_length=32)
+                         max_length=20)
     dev_loader = DataLoader(BaseDataset(dev_text, dev_label),
                             batch_size,
                             pin_memory=True if torch.cuda.is_available() else False,
@@ -108,8 +106,6 @@ def train():
     best_acc = 0
     for epoch in range(10):
         print('epoch:', epoch + 1)
-        pred = []
-        label = []
         pbar = tqdm(train_data_loader)
         for data in pbar:
             optimizer.zero_grad()
@@ -128,10 +124,6 @@ def train():
             loss2 = CE(output, teacher_out, t=2)
 
             loss = loss1 + 0.25 * loss2
-
-            output = outputs.logits.argmax(1).cpu().numpy()
-            pred.extend(output)
-            label.extend(labels.cpu().numpy())
             loss.backward()
 
             optimizer.step()

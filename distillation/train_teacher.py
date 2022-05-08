@@ -59,7 +59,7 @@ def load_data(batch_size=32):
 def train():
     fix_seed()
 
-    train_data_loader, dev_data_loader = load_data(64)
+    train_data_loader, dev_data_loader = load_data(32)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     model = BertForSequenceClassification.from_pretrained(path, num_labels=4)
