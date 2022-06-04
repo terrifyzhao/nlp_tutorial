@@ -141,3 +141,4 @@ gpt/chitchat/dialogue_model
 distillation/model.bin
 distillation/student.bin
 distillation/teacher.bin
+pseudo/pseudo.csv

@@ -83,13 +83,6 @@ def load_data(batch_size=32):
     return train_loader, dev_loader
 
 
-def CE(pred, label, t=1):
-    pred = softmax(pred / t, dim=-1)
-    label = softmax(label / t, dim=-1)
-    loss = -torch.sum(torch.log(pred) * label)
-    return loss
-
-
 # 训练模型
 def train():
     fix_seed()
