@@ -100,14 +100,17 @@ def pseudo_data(model, data):
         if torch.cuda.is_available():
             b_x = b_x.cuda().long()
         with torch.no_grad():
+            # logits
             output = model(b_x)
         pred = torch.argmax(output, dim=1)
+        # 拿到对应的置信度
         out = torch.softmax(output, dim=1)
+
         for i, (p, o) in enumerate(zip(pred, out)):
             if o[p] > 0.95:
                 index = step * 128 + i
                 pseudo.append(index)
-                pseudo_label.append(b_y[i].cpu().numpy())
+                pseudo_label.append(p.item())
     df = pd.read_csv('../data/tnews_public/dev.csv')
     dev_text = df['text'].values
     pseudo_text = dev_text[pseudo]

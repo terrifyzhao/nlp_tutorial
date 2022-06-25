@@ -2,9 +2,8 @@ from sklearn.metrics import accuracy_score
 from transformers import BertForSequenceClassification, BertTokenizer
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from adversarial_training.adversarial import *
 from utils import fix_seed
-from annlp import ptm_path, print_sentence_length
+from annlp import ptm_path
 import torch
 
 path = ptm_path('roberta')
