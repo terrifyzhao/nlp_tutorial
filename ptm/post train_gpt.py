@@ -33,8 +33,12 @@ def load_data(file_name, batch_size):
     sources = []
     targets = []
     for input_ids in encoding['input_ids']:
-        sources.append(input_ids[1:])
-        targets.append(input_ids[0:-1])
+        sources.append(input_ids[0:-1])
+        targets.append(input_ids[1:])
+
+    # [101, 1, 2, 3, 102]
+    # source:[101,1,2,3]
+    # target:[1,2,3,102]
 
     data = {'source': torch.Tensor(sources),
             'attention_mask': torch.Tensor([mask[:-1] for mask in encoding['attention_mask']]),

@@ -4,7 +4,7 @@ from collections import defaultdict
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
 from text_similarity.esim2 import ESIM
-from text_similarity.dssm2 import DSSM
+from text_similarity.dssm import DSSM
 from utils import *
 import pandas as pd
 from tqdm import tqdm
@@ -52,37 +52,36 @@ def load_data(batch_size=32):
 
 # 训练模型
 def train():
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     train_data_loader, dev_data_loader, vocab = load_data(32)
-    model = ESIM(vocab_len=len(vocab),
+    model = ESIM(vocab_size=len(vocab),
                  embedding_size=100,
                  hidden_size=128,
                  max_len=10)
     # model = DSSM(vocab_len=len(vocab),
     #              embedding_size=100,
     #              hidden_size=128)
-
+    model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    loss_func = nn.BCELoss()
-    # loss_func = nn.CrossEntropyLoss()
-
-    if torch.cuda.is_available():
-        model = model.cuda()
+    # loss_func = nn.BCELoss()
+    loss_func = nn.CrossEntropyLoss()
 
     for epoch in range(5):
         pred = []
         label = []
         for step, (x1, x2, y) in tqdm(enumerate(train_data_loader)):
-            if torch.cuda.is_available():
-                x1 = x1.cuda().long()
-                x2 = x2.cuda().long()
-                y = y.cuda()
-            # 前向传播
-            output = model(x1, x2)
+            x1 = x1.to(device)
+            x2 = x2.to(device)
+            y = y.to(device)
 
-            pred.extend((output.cpu().data.numpy() > 0.5).astype(int))
-            label.extend(y.cpu().numpy())
-            loss = loss_func(output, y.float())
+            # 前向传播
+            output = model(x1.long(), x2.long())
+            loss = loss_func(output, y)
             optimizer.zero_grad()
+
+            pred.extend(torch.argmax(output.detach().cpu(), dim=1).numpy())
+            label.extend(y.cpu().numpy())
+
             # 反向传播
             loss.backward()
             # 更新我们的权重
@@ -93,13 +92,12 @@ def train():
         pred = []
         label = []
         for step, (x1, x2, y) in tqdm(enumerate(dev_data_loader)):
-            if torch.cuda.is_available():
-                x1 = x1.cuda().long()
-                x2 = x2.cuda().long()
-                y = y.cuda()
+            x1 = x1.to(device)
+            x2 = x2.to(device)
+            y = y.to(device)
             with torch.no_grad():
-                output = model(x1, x2)
-            pred.extend((output.cpu().data.numpy() > 0.5).astype(int))
+                output = model(x1.long(), x2.long())
+            pred.extend(torch.argmax(output.detach().cpu(), dim=1).numpy())
             label.extend(y.cpu().numpy())
         acc = accuracy_score(pred, label)
         print('dev acc:', acc)

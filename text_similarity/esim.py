@@ -4,44 +4,36 @@ import torch.nn as nn
 
 class ESIM(nn.Module):
     def __init__(self,
-                 char_vocab_size,
-                 char_dim=100,
-                 char_hidden_size=128,
+                 vocab_size,
+                 embedding_size=100,
                  hidden_size=128,
-                 max_word_len=10):
+                 max_len=10):
         super(ESIM, self).__init__()
 
-        self.max_word_len = max_word_len
-        self.char_hidden_size = char_hidden_size
-
-        # representation
-        # self.d = word_dim + char_hidden_size
-        self.d = char_hidden_size
-
         # Word Representation Layer
-        self.char_embedding = nn.Embedding(char_vocab_size, char_dim)
+        self.char_embedding = nn.Embedding(vocab_size, embedding_size)
         # self.word_embedding = nn.Embedding(word_vocab_size, word_dim)
 
         self.char_LSTM = nn.LSTM(
-            input_size=char_dim,
-            hidden_size=char_hidden_size,
+            input_size=embedding_size,
+            hidden_size=hidden_size,
             num_layers=1,
             bidirectional=True,
             batch_first=True)
 
         # Context Representation Layer
         self.context_LSTM = nn.LSTM(
-            input_size=1024,
+            input_size=hidden_size * 8,
             hidden_size=hidden_size,
             num_layers=1,
             bidirectional=True,
             batch_first=True)
 
         # ----- Prediction Layer -----
-        self.max_pool1 = nn.MaxPool2d((self.max_word_len, 1))
-        self.max_pool2 = nn.MaxPool2d((self.max_word_len, 1))
+        self.max_pool1 = nn.MaxPool2d((max_len, 1))
+        self.max_pool2 = nn.MaxPool2d((max_len, 1))
 
-        self.fc1 = nn.Linear(1024, hidden_size)
+        self.fc1 = nn.Linear(hidden_size * 8, hidden_size)
         self.fc2 = nn.Linear(hidden_size, 2)
 
         self.dropout = nn.Dropout(0.2)
@@ -56,7 +48,7 @@ class ESIM(nn.Module):
         # attention
         e = torch.matmul(p_embedding, torch.transpose(q_embedding, 1, 2))
         p_hat = torch.matmul(torch.softmax(e, dim=2), q_embedding)
-        q_hat = torch.matmul(torch.softmax(e, dim=1), p_embedding)
+        q_hat = torch.matmul(torch.transpose(torch.softmax(e, dim=1), 1, 2), p_embedding)
 
         p_cat = torch.cat([p_embedding, p_hat, p_embedding - p_hat, p_embedding * p_hat], dim=2)
         q_cat = torch.cat([q_embedding, q_hat, q_embedding - q_hat, q_embedding * q_hat], dim=2)

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from utils import fix_seed
 import torch
 import pandas as pd
+from feature_augmentation import MixUp
 
 path = 'E:\\ptm\\roberta'
 tokenizer = BertTokenizer.from_pretrained(path)
@@ -60,12 +61,14 @@ def load_data(batch_size=32):
 def train():
     fix_seed()
 
-    train_data_loader, dev_data_loader = load_data(32)
+    train_data_loader, dev_data_loader = load_data(128)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     model = BertForSequenceClassification.from_pretrained(path, num_labels=4)
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-5)
+
+    # mixup = MixUp(model, tokenizer, 4)
 
     best_acc = 0
     for epoch in range(5):
@@ -86,6 +89,9 @@ def train():
             label.extend(labels.cpu().numpy())
             loss = outputs.loss
             loss.backward()
+
+            # mix_loss = mixup.augmentation(data) / 2
+            # mix_loss.backward()
 
             optimizer.step()
 

@@ -12,8 +12,10 @@ path = 'E:\\ptm\\roberta'
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 tokenizer = BertTokenizer.from_pretrained(path)
 teacher = BertForSequenceClassification.from_pretrained(path, num_labels=4)
+# 在线蒸馏，不加载老师的权重
 teacher.load_state_dict(torch.load('teacher.bin', map_location=device))
 teacher = teacher.to(device)
+teacher.eval()
 
 
 class TextCLS(torch.nn.Module):
@@ -36,6 +38,8 @@ class TextCLS(torch.nn.Module):
         embedding = self.embedding(x)
         # [batch_size, seq_len, hidden_size]
         out, _ = self.lstm(embedding)
+        # 计算mask的和  index = sum(mask)-1
+        # out[:, index, :]
         out = self.dense1(out[:, -1, :])
         out = self.dense2(out)
         return out
@@ -97,9 +101,10 @@ def CE(pred, label, t=1):
 def train():
     fix_seed()
 
-    train_data_loader, dev_data_loader = load_data(16)
+    train_data_loader, dev_data_loader = load_data(64)
     student = TextCLS(embedding_size=100)
     student = student.to(device)
+    # 优化器要保留老师和学生模型的参数
     optimizer = torch.optim.Adam(student.parameters(), lr=0.01)
     loss_func = nn.CrossEntropyLoss()
 
@@ -114,14 +119,21 @@ def train():
             attention_mask = data['attention_mask'].to(device)
             labels = data['labels'].to(device).long()
 
+            # 离线蒸馏
             # hard target
+            # 学生模型学习真实的y标
             output = student(input_ids)
             loss1 = loss_func(output, labels)
 
             # soft target
-            outputs = teacher(input_ids, attention_mask=attention_mask, labels=labels)
+            # 学生模型学习老师模型的输出结果，提升学生模型的泛化能力
+            with torch.no_grad():
+                outputs = teacher(input_ids, attention_mask=attention_mask, labels=labels)
+            # outputs = teacher(input_ids, attention_mask=attention_mask, labels=labels)
             teacher_out = outputs.logits
             loss2 = CE(output, teacher_out, t=2)
+
+            # loss3 = loss2(teacher_out,labels)
 
             loss = loss1 + 0.25 * loss2
             loss.backward()
