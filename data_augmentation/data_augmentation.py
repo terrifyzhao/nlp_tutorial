@@ -210,6 +210,6 @@ class Augmentation:
 
 if __name__ == '__main__':
     # print(EDA().augmentation('今天天气真好啊'))
-    # print(BackTranslation().augmentation('今天天气真好啊'))
     # print(AEDA().augmentation('今天天气真好啊'))
-    print(LMAug().augmentation('今天天气真好啊', topk=3))
+    # print(BackTranslation().augmentation('今天天气真好啊'))
+    print(LMAug().augmentation('今天天气真好啊', topk=5))

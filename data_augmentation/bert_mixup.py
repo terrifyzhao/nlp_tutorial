@@ -68,7 +68,7 @@ def train():
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-5)
 
-    # mixup = MixUp(model, tokenizer, 4)
+    mixup = MixUp(model, tokenizer, 4)
 
     best_acc = 0
     for epoch in range(5):
@@ -77,6 +77,7 @@ def train():
         label = []
         pbar = tqdm(train_data_loader)
         for data in pbar:
+            # zero_grad，backward之后梯度都会进行累加
             optimizer.zero_grad()
 
             input_ids = data['input_ids'].to(device)
@@ -87,11 +88,11 @@ def train():
             output = outputs.logits.argmax(1).cpu().numpy()
             pred.extend(output)
             label.extend(labels.cpu().numpy())
-            loss = outputs.loss
+            loss = outputs.loss / 2
             loss.backward()
 
-            # mix_loss = mixup.augmentation(data) / 2
-            # mix_loss.backward()
+            mix_loss = mixup.augmentation(data) / 2
+            mix_loss.backward()
 
             optimizer.step()
 

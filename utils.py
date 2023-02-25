@@ -80,3 +80,17 @@ def get_device():
 
 def one_hot(x, n_class):
     return torch.nn.functional.one_hot(x, num_classes=n_class)
+
+
+def cos_sim(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    if len(a.shape) == 1:
+        a = a[None, :]
+    if len(b.shape) == 1:
+        b = b[None, :]
+
+    a_norm = a / np.linalg.norm(a, axis=-1)[:, None]
+    b_norm = b / np.linalg.norm(b, axis=-1)[:, None]
+    cosine = np.matmul(a_norm, b_norm.T)
+    return cosine
