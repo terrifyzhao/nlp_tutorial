@@ -57,7 +57,11 @@ class BM25:
         return score_list
 
 
-bm = BM25(question)
+question_seg = []
+for q in question:
+    seg = list(jieba.cut(q))
+    question_seg.append(seg)
+bm = BM25(question_seg)
 
 
 def word_recall(text):
