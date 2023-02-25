@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torch.utils.checkpoint
-from typing import List, Optional, Tuple, Union
+from typing import Optional
 from transformers.models.bert.modeling_bert import BertPreTrainedModel, BertModel
 from pytorchltr.loss import LambdaNDCGLoss1, PairwiseLogisticLoss
 

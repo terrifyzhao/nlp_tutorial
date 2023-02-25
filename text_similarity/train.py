@@ -3,7 +3,7 @@ from torch import nn
 from collections import defaultdict
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import accuracy_score
-from text_similarity.esim2 import ESIM
+from text_similarity.esim import ESIM
 from text_similarity.dssm import DSSM
 from utils import *
 import pandas as pd

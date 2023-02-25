@@ -1,5 +1,5 @@
 import pandas as pd
-from annlp import cos_sim_numpy
+from utils import cos_sim
 import numpy as np
 import jieba
 from collections import Counter
@@ -69,7 +69,7 @@ def word_recall(text):
 
 def embedding_recall(text):
     e = model.encode(text)
-    sim = cos_sim_numpy(e, embedding)[0]
+    sim = cos_sim(e, embedding)[0]
     index = np.argsort(-sim)[:10]
     candidate = question[index]
     return candidate

@@ -142,3 +142,5 @@ distillation/model.bin
 distillation/student.bin
 distillation/teacher.bin
 pseudo/pseudo.csv
+rank/best_model.bin
+rank/test.txt

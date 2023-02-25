@@ -8,7 +8,7 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 class SentenceEmbedding:
     def __init__(self):
-        model_path = 'E:\\ptm\\roberta'
+        model_path = 'E:\\ptm\\simbert'
         self.model = BertModel.from_pretrained(model_path)
         self.model.to(device)
         self.model.eval()

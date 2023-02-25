@@ -3,7 +3,7 @@ from transformers import BertTokenizer
 from model import BertForNDCG
 import pandas as pd
 import torch
-from annlp import ptm_path, get_device
+from utils import get_device
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 
@@ -58,7 +58,8 @@ for i, t in enumerate(text):
         q = t
     query.append(q)
     document.append(t)
-encoding = tokenizer(query[:-1000], document[:-1000], truncation=True, padding=True, max_length=128, return_tensors='pt')
+encoding = tokenizer(query[:-1000], document[:-1000], truncation=True, padding=True, max_length=128,
+                     return_tensors='pt')
 encoding_dev = tokenizer(query[-1000:], document[-1000:], truncation=True, padding=True, max_length=64,
                          return_tensors='pt')
 

@@ -3,10 +3,9 @@ from transformers import BertForSequenceClassification, BertTokenizer
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from utils import fix_seed
-from annlp import ptm_path
 import torch
 
-path = ptm_path('roberta')
+path = 'E:\\ptm\\roberta'
 tokenizer = BertTokenizer.from_pretrained(path)
 
 
